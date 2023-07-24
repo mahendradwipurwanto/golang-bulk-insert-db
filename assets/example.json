@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "nama_agama": "Islam"
+    },
+    {
+        "id": 2,
+        "nama_agama": "Christianity"
+    },
+    {
+        "id": 3,
+        "nama_agama": "Hinduism"
+    },
+    {
+        "id": 4,
+        "nama_agama": "Buddhism"
+    }
+]
