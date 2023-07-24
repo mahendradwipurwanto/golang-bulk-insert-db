@@ -32,15 +32,15 @@ func InsertDataFromFile(db *sql.DB, filePath string, columnMapping map[string]st
  * @author Mahendra Dwi Purwanto
  *
  */
-
-func joinStrings(slice []string, sep string) string {
-	if len(slice) == 0 {
+func joinStrings(n int, s string, sep string) string {
+	if n <= 0 {
 		return ""
 	}
-	if len(slice) == 1 {
-		return slice[0]
+	strs := make([]string, n)
+	for i := range strs {
+		strs[i] = s
 	}
-	return slice[0] + sep + joinStrings(slice[1:], sep)
+	return strings.Join(strs, sep)
 }
 
 /**
@@ -54,6 +54,7 @@ func InsertData(db *sql.DB, jsonData []byte, columnMapping map[string]string, ta
 	var dataSlice []map[string]interface{}
 	var placeholders, columns []string
 	var values []interface{}
+	columnsMap := make(map[string]bool)
 
 	// Decode Json and set it to dataSlice
 	err := json.Unmarshal(jsonData, &dataSlice)
@@ -63,21 +64,22 @@ func InsertData(db *sql.DB, jsonData []byte, columnMapping map[string]string, ta
 
 	// Build column and values for raw query
 	for _, data := range dataSlice {
-		var valueStrings []string
 		for jsonKey, columnName := range columnMapping {
+			if _, exists := columnsMap[columnName]; !exists {
+				columnsMap[columnName] = true
+				columns = append(columns, columnName)
+			}
+
 			if val, ok := data[jsonKey]; ok {
 				values = append(values, val)
 			} else {
 				return fmt.Errorf("key %s not found in JSON data", jsonKey)
 			}
-			valueStrings = append(valueStrings, "?")
-			columns = append(columns, columnName)
 		}
-		placeholders = append(placeholders, "("+joinStrings(valueStrings, ", ")+")")
+		placeholders = append(placeholders, "("+joinStrings(len(columnMapping), "?", ", ")+")")
 	}
-
 	// Set query
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", table, strings.Join(columns, ", "), joinStrings(placeholders, ", "))
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", table, strings.Join(columns, ", "), strings.Join(placeholders, ", "))
 
 	// Exec Query
 	_, err = db.Exec(query, values...)
@@ -110,7 +112,7 @@ func main() {
 	// Mapping connection between key json to column name in table
 	columnMapping := map[string]string{
 		"id":         "id",
-		"nama_agama": "name",
+		"nama_agama": "nama",
 	}
 
 	// Insert data handler
